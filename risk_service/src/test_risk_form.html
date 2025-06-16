@@ -1,0 +1,53 @@
+##C:\GAL\financing\financing_app_backend\risk_service\src\test_risk_form.html
+
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>בדיקת מנוע סיכון</title>
+</head>
+<body style="direction: rtl; font-family: sans-serif;">
+  <h2>טופס בדיקה - מנוע חישוב סיכון</h2>
+
+  <div id="riskForm">
+    גיל: <input type="number" id="age" value="35"><br><br>
+    נשוי? <select id="is_married">
+      <option value="true">כן</option>
+      <option value="false">לא</option>
+    </select><br><br>
+    פייקו: <input type="number" id="fico_score" value="650"><br><br>
+    שווי רכב: <input type="number" id="car_value" value="220000"><br><br>
+    גיל הרכב (בשנים): <input type="number" id="car_years_old" value="0"><br><br>
+
+    <button id="submitBtn">חשב סיכון</button>
+  </div>
+
+  <hr>
+  <div id="result" style="white-space: pre; background: #f0f0f0; padding: 10px; border-radius: 8px;"></div>
+
+  <script>
+    document.getElementById("submitBtn").addEventListener("click", async function () {
+      const data = {
+        age: parseInt(document.getElementById("age").value),
+        is_married: document.getElementById("is_married").value === "true",
+        fico_score: parseInt(document.getElementById("fico_score").value),
+        car_value: parseInt(document.getElementById("car_value").value),
+        car_years_old: parseInt(document.getElementById("car_years_old").value)
+      };
+
+      try {
+        const res = await fetch("http://127.0.0.1:5001/api/risk/calculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        document.getElementById("result").innerText = JSON.stringify(result, null, 2);
+      } catch (err) {
+        document.getElementById("result").innerText = "שגיאה בשליחה או בקבלת הנתונים:\n" + err;
+      }
+    });
+  </script>
+</body>
+</html>
