@@ -1,0 +1,62 @@
+# C:\GAL\financing\financing_app_backend\docker-compose.yml
+version: '3.9'
+
+services:
+  # 🔵 שירות ה-Backend הראשי
+  backend:
+    build: .
+    container_name: financing_backend
+    ports:
+      - "5000:5000"  # פורט חשוף מחוץ לדוקר
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - FLASK_APP=src/main.py
+      - FLASK_RUN_HOST=0.0.0.0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/financing_db
+    command: python src/main.py  # מריץ ישירות את הקובץ
+
+  # 🟢 שירות מנוע הסיכונים
+  risk_service:
+    build:
+      context: ./risk_service
+    container_name: risk_service
+    ports:
+      - "5001:5000"  # השירות נחשף על פורט 5001
+    volumes:
+      - ./risk_service:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - FLASK_APP=src/main.py
+      - FLASK_RUN_HOST=0.0.0.0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/financing_db
+      - PYTHONPATH=/app/src  # הכרחי אם יש שימוש ב-import מתוך src/
+    command: flask run --host=0.0.0.0 --port=5000  # שומר על תאימות ל-Flask
+
+  # 🟡 שירות PostgreSQL
+  db:
+    image: postgres:15
+    container_name: financing_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: financing_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+# 🔁 נפח נתונים לשימור מידע ה-DB
+volumes:
+  pg_data:
